@@ -1,0 +1,34 @@
+{
+  "name": "kindergarten",
+  "version": "1.0.0",
+  "description": "manager help for creating fest",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d9nchik/kindergarten.git"
+  },
+  "keywords": [
+    "kindergarten",
+    "fest",
+    "organizer",
+    "Gof4",
+    "architecture"
+  ],
+  "author": "d9nich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/d9nchik/kindergarten/issues"
+  },
+  "homepage": "https://github.com/d9nchik/kindergarten#readme",
+  "devDependencies": {
+    "@types/node": "^16.11.6",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "fastify": "^3.22.1",
+    "pg": "^8.7.1"
+  }
+}
