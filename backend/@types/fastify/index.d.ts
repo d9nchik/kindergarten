@@ -8,5 +8,6 @@ declare module 'fastify' {
     HttpResponse = ServerResponse,
   > {
     verifyJWT: FastifyAuthFunction;
+    verifyJWTAndAdminRights: FastifyAuthFunction;
   }
 }

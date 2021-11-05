@@ -1,7 +1,7 @@
 import fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import fastifyAuth from 'fastify-auth';
 import fastifyJWT from 'fastify-jwt';
-import auth from './src/auth';
+import auth, { TokenProps } from './src/auth';
 
 const server = fastify({ logger: true });
 
@@ -22,8 +22,26 @@ server.decorate(
   },
 );
 
+server.decorate(
+  'verifyJWTAndAdminRights',
+  function (
+    req: FastifyRequest,
+    res: FastifyReply,
+    done: (err?: Error | undefined) => void,
+  ) {
+    const payload = req.body as { token: string };
+    const data = this.jwt.verify(payload.token) as TokenProps;
+    if (!data.statusArray.includes('manager')) {
+      done(new Error('Your account not have "manager" status'));
+      return;
+    }
+
+    done();
+  },
+);
+
 server.after(() => {
-  server.register(auth, { prefix: '/auth' });
+  server.register(auth);
 });
 
 (async () => {

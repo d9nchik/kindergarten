@@ -11,6 +11,12 @@ interface LoginProps {
   password: string;
 }
 
+export interface TokenProps {
+  id: number;
+  statusArray: string[];
+  organizerArray: number[];
+}
+
 // const getToken: RouteHandlerMethod = async (req, res) => {
 //   const payload = req.body as LoginProps;
 // };
@@ -23,7 +29,7 @@ const auth: FastifyPluginCallback<FastifyPluginOptions> = (
   fastify.route({
     method: 'POST',
     url: '/secretPath',
-    preHandler: fastify.auth([fastify.verifyJWT]),
+    preHandler: fastify.auth([fastify.verifyJWTAndAdminRights]),
     handler: async () => {
       return { message: 'hello' };
     },
@@ -80,10 +86,15 @@ const auth: FastifyPluginCallback<FastifyPluginOptions> = (
           [id],
         );
         const organizerArray = resultOrganizer.rows.map((e) =>
-          String(e.organizer_id),
+          Number(e.organizer_id),
         );
+        const tokenData = {
+          id,
+          statusArray,
+          organizerArray,
+        } as TokenProps;
 
-        const token = fastify.jwt.sign({ id, statusArray, organizerArray });
+        const token = fastify.jwt.sign(tokenData);
         return { token };
       } catch (error) {
         console.log(error);
