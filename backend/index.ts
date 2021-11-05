@@ -1,31 +1,29 @@
-import fastify from 'fastify';
+import fastify, { FastifyRequest, FastifyReply } from 'fastify';
+import fastifyAuth from 'fastify-auth';
+import fastifyJWT from 'fastify-jwt';
+import auth from './src/auth';
+
 const server = fastify({ logger: true });
 
-server.route({
-  method: 'GET',
-  url: '/',
-  schema: {
-    // request needs to have a querystring with a `name` parameter
-    querystring: {
-      name: { type: 'string' },
-    },
-    // the response needs to be an object with an `hello` property of type 'string'
-    response: {
-      200: {
-        type: 'object',
-        properties: {
-          hello: { type: 'string' },
-        },
-      },
-    },
+server.register(fastifyJWT, { secret: 'supersecret' });
+server.register(fastifyAuth);
+
+server.decorate(
+  'verifyJWT',
+  function (
+    req: FastifyRequest,
+    res: FastifyReply,
+    done: (err?: Error | undefined) => void,
+  ) {
+    const payload = req.body as { token: string };
+    const data = this.jwt.verify(payload.token);
+    console.log(data);
+    done();
   },
-  // this function is executed for every request before the handler is executed
-  preHandler: async (request, reply) => {
-    // E.g. check authentication
-  },
-  handler: async (request, reply) => {
-    return { hello: 'world' };
-  },
+);
+
+server.after(() => {
+  server.register(auth, { prefix: '/auth' });
 });
 
 (async () => {
