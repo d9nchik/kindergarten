@@ -47,25 +47,24 @@ CREATE TABLE kindergarten.event
     name                   VARCHAR(40)           NOT NULL,
     date                   DATE                  NOT NULL,
     start_time             TIME                  NOT NULL,
-    end_time               INT,
+    end_time               TIME,
     price                  FLOAT                 NOT NULL,
     min_participants_count INT                   NOT NULL,
     detailed_info          TEXT,
     is_selected            BOOLEAN DEFAULT FALSE NOT NULL
 );
-
 CREATE TABLE kindergarten."user"
 (
     id            SERIAL
         CONSTRAINT user_pk
             PRIMARY KEY,
     name          VARCHAR(40) NOT NULL,
-    mail          VARCHAR(40) NOT NULL,
+    email         VARCHAR(40) NOT NULL,
     password_hash CHAR(64)    NOT NULL
 );
 
 CREATE UNIQUE INDEX user_mail_uindex
-    ON kindergarten."user" (mail);
+    ON kindergarten."user" (email);
 
 CREATE TABLE kindergarten.event_organizer_user
 (
@@ -74,7 +73,7 @@ CREATE TABLE kindergarten.event_organizer_user
             REFERENCES kindergarten.event_organizer
             ON UPDATE CASCADE ON DELETE CASCADE,
     user_id            INT NOT NULL
-        CONSTRAINT event_organizer_user_user_id_fk
+        CONSTRAINT event_organizer_user_user_id_fken
             REFERENCES kindergarten."user"
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT event_organizer_user_pk
@@ -135,3 +134,29 @@ CREATE TABLE kindergarten.user_roles
     CONSTRAINT user_roles_pk
         PRIMARY KEY (role_id, user_id)
 );
+
+INSERT INTO kindergarten.role (title)
+VALUES ('manager');
+-- PASS is 12345
+INSERT INTO kindergarten."user" (name, email, password_hash)
+VALUES ('Natasha', 'natasha@gmail.com', '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5');
+INSERT INTO kindergarten.user_roles (role_id, user_id)
+VALUES (1, 1);
+
+-- add event organizer
+INSERT INTO kindergarten.event_organizer (name, address, phone_number, site, mail, detailed_info)
+VALUES ('Child Fun', 'USA, New York, central street', '0234321343', 'child-fun.com', 'child.fun@gmail.com',
+        'Company about children love'),
+       ('Three bear', 'USA, New York, washington street', '023434323', NULL, 'three.bear@yahoo.com',
+        'Clowns, fest and much more');
+
+INSERT INTO kindergarten.event_type (name)
+VALUES ('theatre'),
+       ('excursions'),
+       ('trips to the circus');
+-- Pass is thomas
+INSERT INTO kindergarten."user" (name, email, password_hash)
+VALUES ('Thomas', 'thomas@bing.com', 'd38681074467c0bc147b17a9a12b9efa8cc10bcf545f5b0bccccf5a93c4a2b79');
+
+INSERT INTO kindergarten.event_organizer_user (event_organizer_id, user_id)
+VALUES (1, 2);

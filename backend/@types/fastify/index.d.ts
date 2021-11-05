@@ -9,5 +9,6 @@ declare module 'fastify' {
   > {
     verifyJWT: FastifyAuthFunction;
     verifyJWTAndAdminRights: FastifyAuthFunction;
+    verifyJWTAndOrganizerRights: FastifyAuthFunction;
   }
 }

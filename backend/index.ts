@@ -3,6 +3,7 @@ import fastifyAuth from 'fastify-auth';
 import fastifyJWT from 'fastify-jwt';
 import auth, { TokenProps } from './src/auth';
 import manager from './src/manager';
+import organizer from './src/organizer';
 
 const server = fastify({ logger: true });
 
@@ -41,9 +42,32 @@ server.decorate(
   },
 );
 
+server.decorateRequest('userOrganizerID', '');
+
+server.decorate(
+  'verifyJWTAndOrganizerRights',
+
+  function (
+    req: FastifyRequest<{ Body: { userOrganizerID: number; token: string } }>,
+    res: FastifyReply,
+    done: (err?: Error | undefined) => void,
+  ) {
+    const payload = req.body;
+    const data = this.jwt.verify(payload.token) as TokenProps;
+    if (data.organizerArray.length === 0) {
+      done(new Error('Your account not have "organizer" status'));
+      return;
+    }
+    req.body.userOrganizerID = data.organizerArray[0];
+
+    done();
+  },
+);
+
 server.after(() => {
   server.register(auth);
   server.register(manager, { prefix: '/manager' });
+  server.register(organizer, { prefix: '/organizer' });
 });
 
 (async () => {
