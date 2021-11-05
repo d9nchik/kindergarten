@@ -1,8 +1,4 @@
-import {
-  FastifyPluginCallback,
-  FastifyPluginOptions,
-  RouteHandlerMethod,
-} from 'fastify';
+import { FastifyPluginCallback, FastifyPluginOptions } from 'fastify';
 import { createHash } from 'crypto';
 import db from './db';
 
@@ -16,10 +12,6 @@ export interface TokenProps {
   statusArray: string[];
   organizerArray: number[];
 }
-
-// const getToken: RouteHandlerMethod = async (req, res) => {
-//   const payload = req.body as LoginProps;
-// };
 
 const auth: FastifyPluginCallback<FastifyPluginOptions> = (
   fastify,

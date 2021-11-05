@@ -2,6 +2,7 @@ import fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import fastifyAuth from 'fastify-auth';
 import fastifyJWT from 'fastify-jwt';
 import auth, { TokenProps } from './src/auth';
+import manager from './src/manager';
 
 const server = fastify({ logger: true });
 
@@ -42,6 +43,7 @@ server.decorate(
 
 server.after(() => {
   server.register(auth);
+  server.register(manager, { prefix: '/manager' });
 });
 
 (async () => {
