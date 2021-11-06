@@ -11,6 +11,7 @@ const userEvents: RouteHandlerMethod = async (req, res) => {
     const result = await db.query(
       `SELECT name,
             price,
+            T.id AS id,
             date,
             start_time,
             end_time,
@@ -30,6 +31,7 @@ const userEvents: RouteHandlerMethod = async (req, res) => {
     );
     const notSelectedEvents = result.rows.map((row) => ({
       name: row.name,
+      id: row.id,
       price: row.price,
       date: row.date,
       start_time: row.start_time,
@@ -44,6 +46,25 @@ const userEvents: RouteHandlerMethod = async (req, res) => {
   }
 };
 
+const bookEvent: RouteHandlerMethod = async (req, res) => {
+  if (req.validationError) {
+    res.code(400).send(req.validationError);
+    return;
+  }
+  const payload = req.query as { userID: number; eventID: number };
+  try {
+    await db.query(
+      `INSERT INTO kindergarten.book (event_id, user_id, book_status_id)
+        VALUES ($1, $2, 1);`,
+      [payload.eventID, payload.userID],
+    );
+    res.send('Successfully booked');
+  } catch (err) {
+    console.log(err);
+    res.code(500).send('Sorry, something gone wrong');
+  }
+};
+
 const user: FastifyPluginCallback<FastifyPluginOptions> = (
   fastify,
   _,
@@ -54,6 +75,22 @@ const user: FastifyPluginCallback<FastifyPluginOptions> = (
     url: '/myEvents',
     preHandler: fastify.auth([fastify.verifyJWT]),
     handler: userEvents,
+  });
+  fastify.route({
+    method: 'GET',
+    url: '/bookEvent',
+    preHandler: fastify.auth([fastify.verifyJWT]),
+    handler: bookEvent,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          eventID: { type: 'number' },
+        },
+        required: ['eventID'],
+      },
+    },
+    attachValidation: true,
   });
   done();
 };

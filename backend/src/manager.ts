@@ -131,6 +131,10 @@ const getNotSelectedEvents: RouteHandlerMethod = async (req, res) => {
 };
 
 const selectEvent: RouteHandlerMethod = async (req, res) => {
+  if (req.validationError) {
+    res.code(400).send(req.validationError);
+    return;
+  }
   const payload = req.query as { eventID: number };
   try {
     await db.query(
