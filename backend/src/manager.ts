@@ -99,6 +99,79 @@ const updateOrganizer: RouteHandlerMethod = async (req, res) => {
   }
 };
 
+const getNotSelectedEvents: RouteHandlerMethod = async (req, res) => {
+  try {
+    const result = await db.query(`SELECT id,
+                                        name,
+                                        price,
+                                        date,
+                                        start_time,
+                                        end_time,
+                                        min_participants_count,
+                                        detailed_info
+                                  FROM kindergarten.event
+                                  WHERE is_selected = FALSE
+                                    AND (date + start_time) > NOW() + '3d';`);
+    const notSelectedEvents = result.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      price: row.price,
+      date: row.date,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      min_participants_count: row.min_participants_count,
+      detailed_info: row.detailed_info,
+    }));
+    res.send(notSelectedEvents);
+  } catch (err) {
+    res.code(500).send('Something gone wrong');
+  }
+};
+
+const selectEvent: RouteHandlerMethod = async (req, res) => {
+  const payload = req.query as { eventID: number };
+  try {
+    await db.query(
+      `UPDATE kindergarten.event
+        SET is_selected= TRUE
+        WHERE id = $1;`,
+      [payload.eventID],
+    );
+    res.send('Selected event successfully');
+  } catch (err) {
+    res.code(500).send('Something gone wrong');
+  }
+};
+
+const futureEvents: RouteHandlerMethod = async (req, res) => {
+  try {
+    const result = await db.query(`SELECT id,
+                                        name,
+                                        price,
+                                        date,
+                                        start_time,
+                                        end_time,
+                                        min_participants_count,
+                                        detailed_info
+                                  FROM kindergarten.event
+                                  WHERE is_selected = TRUE
+                                    AND (date + start_time) > NOW();`);
+    const notSelectedEvents = result.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      price: row.price,
+      date: row.date,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      min_participants_count: row.min_participants_count,
+      detailed_info: row.detailed_info,
+    }));
+    res.send(notSelectedEvents);
+  } catch (err) {
+    res.code(500).send('Something gone wrong');
+  }
+};
+
 const manager: FastifyPluginCallback<FastifyPluginOptions> = (
   fastify,
   _,
@@ -147,6 +220,34 @@ const manager: FastifyPluginCallback<FastifyPluginOptions> = (
       },
     },
     attachValidation: true,
+  });
+  fastify.route({
+    method: 'GET',
+    url: '/notSelectedEvents',
+    preHandler: fastify.auth([fastify.verifyJWTAndAdminRights]),
+    handler: getNotSelectedEvents,
+  });
+  fastify.route({
+    method: 'GET',
+    url: '/selectEvent',
+    preHandler: fastify.auth([fastify.verifyJWTAndAdminRights]),
+    handler: selectEvent,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          eventID: { type: 'number' },
+        },
+        required: ['eventID'],
+      },
+    },
+    attachValidation: true,
+  });
+  fastify.route({
+    method: 'GET',
+    url: '/futureEvents',
+    preHandler: fastify.auth([fastify.verifyJWTAndAdminRights]),
+    handler: futureEvents,
   });
 
   done();
