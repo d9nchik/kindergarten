@@ -17,8 +17,13 @@ server.decorate(
     res: FastifyReply,
     done: (err?: Error | undefined) => void,
   ) {
-    const payload = req.body as { token: string };
-    const data = this.jwt.verify(payload.token);
+    const auth = req.raw.headers.authorization;
+    if (!auth) {
+      return done(new Error('Missing token header'));
+    }
+    const data = this.jwt.verify(
+      Array.isArray(auth) ? auth[0] : auth,
+    ) as TokenProps;
     console.log(data);
     done();
   },
@@ -31,11 +36,16 @@ server.decorate(
     res: FastifyReply,
     done: (err?: Error | undefined) => void,
   ) {
-    const payload = req.body as { token: string };
-    const data = this.jwt.verify(payload.token) as TokenProps;
+    const auth = req.raw.headers.authorization;
+    if (!auth) {
+      return done(new Error('Missing token header'));
+    }
+    const data = this.jwt.verify(
+      Array.isArray(auth) ? auth[0] : auth,
+    ) as TokenProps;
+
     if (!data.statusArray.includes('manager')) {
-      done(new Error('Your account not have "manager" status'));
-      return;
+      return done(new Error('Your account not have "manager" status'));
     }
 
     done();
@@ -48,17 +58,20 @@ server.decorate(
   'verifyJWTAndOrganizerRights',
 
   function (
-    req: FastifyRequest<{ Body: { userOrganizerID: number; token: string } }>,
+    req: FastifyRequest<{ Body: { userOrganizerID: number } }>,
     res: FastifyReply,
     done: (err?: Error | undefined) => void,
   ) {
-    const payload = req.body;
-    const data = this.jwt.verify(payload.token) as TokenProps;
-    if (data.organizerArray.length === 0) {
-      done(new Error('Your account not have "organizer" status'));
-      return;
+    req.jwtVerify();
+    const auth = req.raw.headers.authorization;
+    if (!auth) {
+      return done(new Error('Missing token header'));
     }
-    req.body.userOrganizerID = data.organizerArray[0];
+    const data = this.jwt.verify(auth) as TokenProps;
+    if (data.organizerArray.length === 0) {
+      return done(new Error('Your account not have "organizer" status'));
+    }
+    if (req.body !== null) req.body.userOrganizerID = data.organizerArray[0];
 
     done();
   },

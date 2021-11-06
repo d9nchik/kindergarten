@@ -39,7 +39,7 @@ const getOrganizer: RouteHandlerMethod = async (req, res) => {
     res.code(400).send(req.validationError);
     return;
   }
-  const payload = req.body as GetOrganizerProps;
+  const payload = req.query as GetOrganizerProps;
   try {
     const response = await db.query(
       `SELECT name, address, phone_number, site, mail, detailed_info
@@ -105,18 +105,18 @@ const manager: FastifyPluginCallback<FastifyPluginOptions> = (
   done,
 ) => {
   fastify.route({
-    method: 'POST',
-    url: '/getAllOrganizers',
+    method: 'GET',
+    url: '/allOrganizers',
     preHandler: fastify.auth([fastify.verifyJWTAndAdminRights]),
     handler: getAllOrganizers,
   });
   fastify.route({
-    method: 'POST',
-    url: '/getOrganizer',
+    method: 'GET',
+    url: '/organizer',
     preHandler: fastify.auth([fastify.verifyJWTAndAdminRights]),
     handler: getOrganizer,
     schema: {
-      body: {
+      querystring: {
         type: 'object',
         properties: {
           organizerID: { type: 'number' },

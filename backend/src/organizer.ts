@@ -99,7 +99,7 @@ const organizer: FastifyPluginCallback<FastifyPluginOptions> = (
   });
 
   fastify.route({
-    method: 'POST',
+    method: 'GET',
     url: '/eventTypes',
     preHandler: fastify.auth([
       fastify.verifyJWTAndAdminRights,
