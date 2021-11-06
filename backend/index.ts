@@ -4,6 +4,7 @@ import fastifyJWT from 'fastify-jwt';
 import auth, { TokenProps } from './src/auth';
 import manager from './src/manager';
 import organizer from './src/organizer';
+import user from './src/user';
 
 const server = fastify({ logger: true });
 
@@ -15,7 +16,7 @@ const headerMissingMessage = 'Missing token header';
 server.decorate(
   'verifyJWT',
   function (
-    req: FastifyRequest,
+    req: FastifyRequest<{ Querystring: { userID: number } }>,
     res: FastifyReply,
     done: (err?: Error | undefined) => void,
   ) {
@@ -23,9 +24,10 @@ server.decorate(
     if (!auth) {
       return done(new Error(headerMissingMessage));
     }
-    const data = this.jwt.verify(
-      Array.isArray(auth) ? auth[0] : auth,
-    ) as TokenProps;
+    const data = this.jwt.verify(auth) as TokenProps;
+    if (req.query !== null) {
+      req.query.userID = data.id;
+    }
     console.log(data);
     done();
   },
@@ -83,6 +85,7 @@ server.after(() => {
   server.register(auth);
   server.register(manager, { prefix: '/manager' });
   server.register(organizer, { prefix: '/organizer' });
+  server.register(user, { prefix: '/user' });
 });
 
 (async () => {
