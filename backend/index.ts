@@ -10,6 +10,8 @@ const server = fastify({ logger: true });
 server.register(fastifyJWT, { secret: 'supersecret' });
 server.register(fastifyAuth);
 
+const headerMissingMessage = 'Missing token header';
+
 server.decorate(
   'verifyJWT',
   function (
@@ -19,7 +21,7 @@ server.decorate(
   ) {
     const auth = req.raw.headers.authorization;
     if (!auth) {
-      return done(new Error('Missing token header'));
+      return done(new Error(headerMissingMessage));
     }
     const data = this.jwt.verify(
       Array.isArray(auth) ? auth[0] : auth,
@@ -38,7 +40,7 @@ server.decorate(
   ) {
     const auth = req.raw.headers.authorization;
     if (!auth) {
-      return done(new Error('Missing token header'));
+      return done(new Error(headerMissingMessage));
     }
     const data = this.jwt.verify(
       Array.isArray(auth) ? auth[0] : auth,
@@ -65,7 +67,7 @@ server.decorate(
     req.jwtVerify();
     const auth = req.raw.headers.authorization;
     if (!auth) {
-      return done(new Error('Missing token header'));
+      return done(new Error(headerMissingMessage));
     }
     const data = this.jwt.verify(auth) as TokenProps;
     if (data.organizerArray.length === 0) {

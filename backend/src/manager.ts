@@ -5,6 +5,8 @@ import {
 } from 'fastify';
 import db from './db';
 
+const serverHaveCrashedMessage = 'Something gone wrong';
+
 const getAllOrganizers: RouteHandlerMethod = async (req, res) => {
   try {
     const response = await db.query(
@@ -16,7 +18,7 @@ const getAllOrganizers: RouteHandlerMethod = async (req, res) => {
     }));
     res.send(organizerArray);
   } catch (error) {
-    res.code(500).send('Something gone wrong');
+    res.code(500).send(serverHaveCrashedMessage);
   }
 };
 
@@ -63,7 +65,7 @@ const getOrganizer: RouteHandlerMethod = async (req, res) => {
     };
     res.send(organizerObj);
   } catch (error) {
-    res.code(500).send('Something gone wrong');
+    res.code(500).send(serverHaveCrashedMessage);
   }
 };
 
@@ -95,7 +97,7 @@ const updateOrganizer: RouteHandlerMethod = async (req, res) => {
     );
     res.send('Update successfully');
   } catch (error) {
-    res.code(500).send('Something gone wrong');
+    res.code(500).send(serverHaveCrashedMessage);
   }
 };
 
@@ -124,7 +126,7 @@ const getNotSelectedEvents: RouteHandlerMethod = async (req, res) => {
     }));
     res.send(notSelectedEvents);
   } catch (err) {
-    res.code(500).send('Something gone wrong');
+    res.code(500).send(serverHaveCrashedMessage);
   }
 };
 
@@ -139,25 +141,29 @@ const selectEvent: RouteHandlerMethod = async (req, res) => {
     );
     res.send('Selected event successfully');
   } catch (err) {
-    res.code(500).send('Something gone wrong');
+    res.code(500).send(serverHaveCrashedMessage);
   }
 };
 
 const futureEvents: RouteHandlerMethod = async (req, res) => {
   try {
-    const result = await db.query(`SELECT id,
-                                        name,
-                                        price,
-                                        date,
-                                        start_time,
-                                        end_time,
-                                        min_participants_count,
-                                        detailed_info
-                                  FROM kindergarten.event
-                                  WHERE is_selected = TRUE
-                                    AND (date + start_time) > NOW();`);
+    const result = await db.query(`SELECT name,
+                                          price,
+                                          date,
+                                          start_time,
+                                          end_time,
+                                          min_participants_count,
+                                          detailed_info,
+                                          user_joined
+                                    FROM (
+                                            SELECT id, COUNT(user_id) AS user_joined
+                                            FROM kindergarten.event
+                                                      LEFT JOIN kindergarten.book b on event.id = b.event_id
+                                            WHERE is_selected = TRUE
+                                              AND (date + start_time) > NOW()
+                                            GROUP BY id) T
+                                            JOIN kindergarten.event e ON T.id = e.id;`);
     const notSelectedEvents = result.rows.map((row) => ({
-      id: row.id,
       name: row.name,
       price: row.price,
       date: row.date,
@@ -165,10 +171,11 @@ const futureEvents: RouteHandlerMethod = async (req, res) => {
       end_time: row.end_time,
       min_participants_count: row.min_participants_count,
       detailed_info: row.detailed_info,
+      user_joined: Number(row.user_joined),
     }));
     res.send(notSelectedEvents);
   } catch (err) {
-    res.code(500).send('Something gone wrong');
+    res.code(500).send(serverHaveCrashedMessage);
   }
 };
 
@@ -252,5 +259,4 @@ const manager: FastifyPluginCallback<FastifyPluginOptions> = (
 
   done();
 };
-
 export default manager;
