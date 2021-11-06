@@ -160,3 +160,7 @@ VALUES ('Thomas', 'thomas@bing.com', 'd38681074467c0bc147b17a9a12b9efa8cc10bcf54
 
 INSERT INTO kindergarten.event_organizer_user (event_organizer_id, user_id)
 VALUES (1, 2);
+
+INSERT INTO kindergarten.book_status (status_name)
+VALUES ('booked'),
+       ('preordered');
