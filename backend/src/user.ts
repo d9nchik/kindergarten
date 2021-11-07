@@ -5,6 +5,43 @@ import {
 } from 'fastify';
 import db from './db';
 
+const serverErrorMessage = 'Sorry, something gone wrong';
+
+interface RowEventProps {
+  name: string;
+  id: number;
+  price: number;
+  date: Date;
+  start_time: string;
+  end_time: string | null;
+  min_participants_count: number;
+  detailed_info: string | null;
+  user_joined: string;
+}
+interface EventProps {
+  name: string;
+  id: number;
+  price: number;
+  date: Date;
+  start_time: string;
+  end_time: string | null;
+  min_participants_count: number;
+  detailed_info: string | null;
+  user_joined: number;
+}
+
+const rowToEvent = (row: RowEventProps): EventProps => ({
+  name: row.name,
+  id: row.id,
+  price: row.price,
+  date: row.date,
+  start_time: row.start_time,
+  end_time: row.end_time,
+  min_participants_count: row.min_participants_count,
+  detailed_info: row.detailed_info,
+  user_joined: Number(row.user_joined),
+});
+
 const futureEvents: RouteHandlerMethod = async (req, res) => {
   const payload = req.query as { userID: number };
   try {
@@ -29,20 +66,41 @@ const futureEvents: RouteHandlerMethod = async (req, res) => {
                 JOIN kindergarten.event e ON T.id = e.id;`,
       [payload.userID],
     );
-    const notSelectedEvents = result.rows.map((row) => ({
-      name: row.name,
-      id: row.id,
-      price: row.price,
-      date: row.date,
-      start_time: row.start_time,
-      end_time: row.end_time,
-      min_participants_count: row.min_participants_count,
-      detailed_info: row.detailed_info,
-      user_joined: Number(row.user_joined),
-    }));
+    const notSelectedEvents = result.rows.map(rowToEvent);
     res.send(notSelectedEvents);
   } catch (err) {
-    res.code(500).send('Sorry, something gone wrong');
+    res.code(500).send(serverErrorMessage);
+  }
+};
+const bookedEvents: RouteHandlerMethod = async (req, res) => {
+  const payload = req.query as { userID: number };
+  try {
+    const result = await db.query(
+      `SELECT T.id,
+                name,
+                price,
+                date,
+                start_time,
+                end_time,
+                min_participants_count,
+                detailed_info,
+                user_joined
+          FROM (
+                  SELECT id, COUNT(user_id) AS user_joined
+                  FROM kindergarten.event
+                            LEFT JOIN kindergarten.book b on event.id = b.event_id
+                  WHERE is_selected = TRUE
+                    AND (date + start_time) > NOW()
+                    AND b.user_id = $1
+                    AND b.book_status_id = 1
+                  GROUP BY id) T
+                  JOIN kindergarten.event e ON T.id = e.id;`,
+      [payload.userID],
+    );
+    const notSelectedEvents = result.rows.map(rowToEvent);
+    res.send(notSelectedEvents);
+  } catch (err) {
+    res.code(500).send(serverErrorMessage);
   }
 };
 
@@ -61,7 +119,7 @@ const bookEvent: RouteHandlerMethod = async (req, res) => {
     res.send('Successfully booked');
   } catch (err) {
     console.log(err);
-    res.code(500).send('Sorry, something gone wrong');
+    res.code(500).send(serverErrorMessage);
   }
 };
 
@@ -76,6 +134,14 @@ const user: FastifyPluginCallback<FastifyPluginOptions> = (
     preHandler: fastify.auth([fastify.verifyJWT]),
     handler: futureEvents,
   });
+
+  fastify.route({
+    method: 'GET',
+    url: '/bookedEvents',
+    preHandler: fastify.auth([fastify.verifyJWT]),
+    handler: bookedEvents,
+  });
+
   fastify.route({
     method: 'GET',
     url: '/bookEvent',
