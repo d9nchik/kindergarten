@@ -2,8 +2,8 @@ export const SERVER_URL = 'localhost:3000';
 
 class User {
   protected jwt_token: string = '';
-  protected status_array: string[] = [];
-  protected organizer_company: number[] = [];
+  public status_array: string[] = [];
+  public organizer_company: number[] = [];
 
   constructor(user: User | null = null) {
     if (!user) {
