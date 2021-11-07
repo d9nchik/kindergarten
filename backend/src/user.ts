@@ -5,7 +5,7 @@ import {
 } from 'fastify';
 import db from './db';
 
-const userEvents: RouteHandlerMethod = async (req, res) => {
+const futureEvents: RouteHandlerMethod = async (req, res) => {
   const payload = req.query as { userID: number };
   try {
     const result = await db.query(
@@ -24,7 +24,7 @@ const userEvents: RouteHandlerMethod = async (req, res) => {
                         LEFT JOIN kindergarten.book b on event.id = b.event_id
                 WHERE is_selected = TRUE
                 AND (date + start_time) > NOW()
-                AND id NOT IN (SELECT book.user_id FROM kindergarten.book WHERE book.user_id = $1)
+                AND id NOT IN (SELECT book.event_id FROM kindergarten.book WHERE book.user_id = $1)
                 GROUP BY id) T
                 JOIN kindergarten.event e ON T.id = e.id;`,
       [payload.userID],
@@ -72,9 +72,9 @@ const user: FastifyPluginCallback<FastifyPluginOptions> = (
 ) => {
   fastify.route({
     method: 'GET',
-    url: '/myEvents',
+    url: '/futureEvents',
     preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: userEvents,
+    handler: futureEvents,
   });
   fastify.route({
     method: 'GET',
@@ -92,6 +92,7 @@ const user: FastifyPluginCallback<FastifyPluginOptions> = (
     },
     attachValidation: true,
   });
+
   done();
 };
 
