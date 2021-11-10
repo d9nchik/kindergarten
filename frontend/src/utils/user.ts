@@ -10,6 +10,8 @@ class User {
       return;
     }
     this.jwt_token = user.jwt_token;
+    this.status_array = user.status_array;
+    this.organizer_company = user.organizer_company;
   }
   public isLogin(): boolean {
     return !!this.jwt_token;
