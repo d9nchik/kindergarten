@@ -7,15 +7,24 @@ class UserFacade {
   private builder: Builder = new Builder();
   private user: User | null = null;
 
+  constructor() {
+    const cred = sessionStorage.getItem('cred');
+    if (cred) {
+      this.user = new User(JSON.parse(cred));
+    }
+  }
+
   public async login(login: string, password: string) {
     this.builder.setLogin(login);
     this.builder.setPassword(password);
     await this.createInstance();
+    sessionStorage.setItem('cred', JSON.stringify(this.user));
   }
 
   public logout() {
     this.builder.reset();
     this.user = null;
+    sessionStorage.removeItem('cred');
   }
 
   protected async createInstance() {
@@ -28,14 +37,14 @@ class UserFacade {
 
   public isManager(): boolean | null {
     if (!this.user) {
-      return null;
+      return false;
     }
     return this.user.status_array.includes('manager');
   }
 
   public isOrganizer(): boolean | null {
     if (!this.user) {
-      return null;
+      return false;
     }
     return this.user.organizer_company.length !== 0;
   }
