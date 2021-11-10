@@ -85,9 +85,9 @@ const auth: FastifyPluginCallback<FastifyPluginOptions> = (
           statusArray,
           organizerArray,
         } as TokenProps;
-
+        console.log(tokenData);
         const token = fastify.jwt.sign(tokenData);
-        return { token };
+        return { token, statusArray, organizerArray };
       } catch (error) {
         console.log(error);
         res.code(500).send({ message: 'Sorry. We are unavailable' });
