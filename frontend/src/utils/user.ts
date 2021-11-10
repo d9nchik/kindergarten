@@ -1,4 +1,4 @@
-export const SERVER_URL = 'localhost:3000';
+export const SERVER_URL = 'http://localhost:8080';
 
 class User {
   protected jwt_token: string = '';

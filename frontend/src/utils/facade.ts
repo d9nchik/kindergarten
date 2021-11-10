@@ -7,10 +7,10 @@ class UserFacade {
   private builder: Builder = new Builder();
   private user: User | null = null;
 
-  public login(login: string, password: string) {
+  public async login(login: string, password: string) {
     this.builder.setLogin(login);
     this.builder.setPassword(password);
-    this.createInstance();
+    await this.createInstance();
   }
 
   public logout() {
@@ -18,8 +18,8 @@ class UserFacade {
     this.user = null;
   }
 
-  protected createInstance() {
-    this.user = this.builder.build();
+  protected async createInstance() {
+    this.user = await this.builder.build();
   }
 
   public getInstance(): User | null {
@@ -53,6 +53,12 @@ class UserFacade {
     }
     return null;
   }
+
+  public isAuthenticated(): boolean {
+    return !!this.user;
+  }
 }
+
+export const user = new UserFacade();
 
 export default UserFacade;

@@ -19,13 +19,13 @@ abstract class AbstractBuilder {
     this.login = '';
   }
 
-  abstract build(): User;
+  abstract build(): Promise<User>;
 }
 
 class Builder extends AbstractBuilder {
-  public build(): User {
+  public async build(): Promise<User> {
     const user = new User();
-    user.login(this.login, this.password);
+    await user.login(this.login, this.password);
     if (user.status_array.includes('manager')) {
       return new Manager(user);
     }
