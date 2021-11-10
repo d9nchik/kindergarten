@@ -12,7 +12,7 @@ interface AddEventProps {
   detailedInfo: string | null;
 }
 
-interface EventType {
+export interface EventType {
   id: number;
   name: string;
 }
