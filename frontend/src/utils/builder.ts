@@ -20,12 +20,17 @@ abstract class AbstractBuilder {
   }
 
   abstract build(): Promise<User>;
+  abstract buildFromUser(user: User): User;
 }
 
 class Builder extends AbstractBuilder {
   public async build(): Promise<User> {
     const user = new User();
     await user.login(this.login, this.password);
+    return this.buildFromUser(user);
+  }
+
+  public buildFromUser(user: User): User {
     if (user.status_array.includes('manager')) {
       return new Manager(user);
     }

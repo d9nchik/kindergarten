@@ -10,7 +10,7 @@ class UserFacade {
   constructor() {
     const cred = sessionStorage.getItem('cred');
     if (cred) {
-      this.user = new User(JSON.parse(cred));
+      this.user = this.builder.buildFromUser(JSON.parse(cred));
     }
   }
 
