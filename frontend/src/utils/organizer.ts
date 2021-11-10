@@ -2,14 +2,13 @@ import User, { SERVER_URL } from './user';
 
 interface AddEventProps {
   eventTypeID: number;
-  userOrganizerID: number;
   name: string;
   date: number;
   startTime: string;
-  endTime: string | null;
+  endTime?: string;
   price: number;
   minParticipantsCount: number;
-  detailedInfo: string | null;
+  detailedInfo?: string;
 }
 
 export interface EventType {
@@ -27,7 +26,7 @@ class Organizer extends User {
     return data;
   }
 
-  public async updateOrganizer(event: AddEventProps): Promise<boolean> {
+  public async addEvent(event: AddEventProps): Promise<boolean> {
     const response = await fetch(`${SERVER_URL}/organizer/addEvent`, {
       headers: {
         Authorization: this.jwt_token,
