@@ -164,3 +164,7 @@ VALUES (1, 2);
 INSERT INTO kindergarten.book_status (status_name)
 VALUES ('booked'),
        ('preordered');
+
+-- Pass is cage
+INSERT INTO kindergarten."user" (name, email, password_hash)
+VALUES ('Nicolas', 'nicolas@bing.com', '5943be120e49e99345f31b6b98708dfac9276978d29603c0398222670ecfdf8f');
