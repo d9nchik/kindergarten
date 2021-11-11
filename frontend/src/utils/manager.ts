@@ -4,10 +4,10 @@ export interface EventProps {
   id: number;
   name: string;
   date: number;
-  startTime: string;
-  endTime: string | null;
+  start_time: string;
+  end_time: string | null;
   price: number;
-  minParticipantsCount: number;
+  min_participants_count: number;
   detailedInfo: string | null;
 }
 export interface ShortOrganizerInfo {
