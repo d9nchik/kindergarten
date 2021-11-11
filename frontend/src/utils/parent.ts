@@ -1,6 +1,6 @@
 import User, { SERVER_URL } from './user';
 
-interface Event {
+export interface Event {
   name: string;
   id: number;
   price: number;
@@ -23,7 +23,7 @@ class Parent extends User {
     return response.ok;
   }
   public async getFutureEvents(): Promise<Event[]> {
-    const response = await fetch(`${SERVER_URL}/user/futureEvent`, {
+    const response = await fetch(`${SERVER_URL}/user/futureEvents`, {
       headers: { Authorization: this.jwt_token },
     });
     const data = (await response.json()) as Event[];
@@ -31,7 +31,7 @@ class Parent extends User {
   }
 
   public async getBookedEvents(): Promise<Event[]> {
-    const response = await fetch(`${SERVER_URL}/user/bookedEvent`, {
+    const response = await fetch(`${SERVER_URL}/user/bookedEvents`, {
       headers: { Authorization: this.jwt_token },
     });
     const data = (await response.json()) as Event[];
