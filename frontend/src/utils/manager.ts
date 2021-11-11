@@ -1,6 +1,6 @@
 import User, { SERVER_URL } from './user';
 
-interface EventProps {
+export interface EventProps {
   id: number;
   name: string;
   date: number;
@@ -10,19 +10,19 @@ interface EventProps {
   minParticipantsCount: number;
   detailedInfo: string | null;
 }
-interface ShortOrganizerInfo {
+export interface ShortOrganizerInfo {
   id: number;
   companyName: string;
 }
 
-interface OrganizerInformation {
+export interface OrganizerInformation {
   organizerID: number;
   name: string;
   address: string;
   phone_number: string;
-  site: string | null;
+  site?: string;
   mail: string;
-  detailed_info: string | null;
+  detailed_info?: string;
 }
 
 class Manager extends User {
