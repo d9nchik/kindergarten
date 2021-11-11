@@ -1,6 +1,7 @@
 import Builder from './builder';
 import Manager from './manager';
 import Organizer from './organizer';
+import Parent from './parent';
 import User from './user';
 
 class UserFacade {
@@ -58,6 +59,12 @@ class UserFacade {
 
   public getOrganizer(): Organizer | null {
     if (this.user instanceof Organizer) {
+      return this.user;
+    }
+    return null;
+  }
+  public getParent(): Parent | null {
+    if (this.user instanceof Parent) {
       return this.user;
     }
     return null;
