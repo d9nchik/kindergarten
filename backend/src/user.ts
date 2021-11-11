@@ -91,7 +91,7 @@ const bookedEvents: RouteHandlerMethod = async (req, res) => {
                             LEFT JOIN kindergarten.book b on event.id = b.event_id
                   WHERE is_selected = TRUE
                     AND (date + start_time) > NOW()
-                    AND b.user_id = $1
+                    AND b.event_id IN (SELECT b.event_id FROM kindergarten.book b WHERE b.user_id=$1)
                     AND b.book_status_id = 1
                   GROUP BY id) T
                   JOIN kindergarten.event e ON T.id = e.id;`,
