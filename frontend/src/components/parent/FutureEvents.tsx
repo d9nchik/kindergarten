@@ -1,5 +1,10 @@
 import React, { FunctionComponent, useEffect, useState } from 'react';
 import Parent, { Event } from '../../utils/parent';
+import {
+  AndSpecification,
+  MaxPriceSpecification,
+  NameSpecification,
+} from '../../utils/specification';
 
 interface IProps {
   parent: Parent;
@@ -7,15 +12,62 @@ interface IProps {
 
 const FutureEvents: FunctionComponent<IProps> = ({ parent }: IProps) => {
   const [events, setEvents] = useState<Event[]>([]);
+  const [searchName, setSearchName] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+
   useEffect(() => {
     (async () => setEvents(await parent.getFutureEvents()))();
   }, [parent]);
+  useEffect(() => {
+    const maxPriceSpecification = new MaxPriceSpecification(
+      maxPrice ? Number(maxPrice) : undefined,
+    );
+    const searchNameSpecification = new NameSpecification(searchName);
+    const maxPriceAndSearchNameSpecification = new AndSpecification();
+    maxPriceAndSearchNameSpecification.addSpecification(maxPriceSpecification);
+    maxPriceAndSearchNameSpecification.addSpecification(
+      searchNameSpecification,
+    );
+    setFilteredEvents(
+      events.filter((event) =>
+        maxPriceAndSearchNameSpecification.isSatisfiedByEvent(event),
+      ),
+    );
+  }, [events, searchName, maxPrice]);
 
   return (
     <div>
       <h2>Future Events</h2>
+      <form onSubmit={(e) => e.preventDefault()}>
+        <label>
+          Event Name:
+          <input
+            type="text"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+          />
+        </label>
+        <br />
+        <label>
+          Max Price
+          <input
+            type="number"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+          />
+        </label>
+        <button
+          onClick={() => {
+            setSearchName('');
+            setMaxPrice('');
+          }}
+        >
+          Clear
+        </button>
+      </form>
       <ul>
-        {events.map(
+        {filteredEvents.map(
           ({
             id,
             name,
