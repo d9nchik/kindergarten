@@ -35,13 +35,13 @@ const providerEvents: Event[] = [
     start_time: '6:00:00',
     end_time: '23:00:00',
     min_participants_count: 20,
-    detailed_info: 'Visit the city of Polanf',
+    detailed_info: 'Visit the city of Poland',
     id: 123457,
     user_joined: 8,
   },
   {
-    name: 'Excursion to Kovel',
-    price: 10,
+    name: 'Excursion to Bukovel',
+    price: 12,
     date: new Date('2022-10-13'),
     start_time: '5:00:00',
     end_time: '21:00:00',
@@ -52,7 +52,7 @@ const providerEvents: Event[] = [
   },
 ];
 
-const getEventsType: RouteHandlerMethod = async (req, res) => {
+const search: RouteHandlerMethod = async (req, res) => {
   if (req.validationError) {
     res.code(400).send(req.validationError);
     return;
@@ -72,7 +72,7 @@ const provider1: FastifyPluginCallback<FastifyPluginOptions> = (
     method: 'GET',
     url: '/search',
     preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: getEventsType,
+    handler: search,
     schema: {
       querystring: {
         type: 'object',
