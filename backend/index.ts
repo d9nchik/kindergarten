@@ -5,6 +5,7 @@ import auth, { TokenProps } from './src/auth';
 import manager from './src/manager';
 import organizer from './src/organizer';
 import user from './src/user';
+import provider1 from './src/provider1';
 
 const server = fastify({ logger: true });
 
@@ -86,6 +87,7 @@ server.after(() => {
   server.register(manager, { prefix: '/manager' });
   server.register(organizer, { prefix: '/organizer' });
   server.register(user, { prefix: '/user' });
+  server.register(provider1, { prefix: '/provider1' });
 });
 
 (async () => {
