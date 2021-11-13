@@ -15,10 +15,18 @@ const FutureEvents: FunctionComponent<IProps> = ({ parent }: IProps) => {
   const [searchName, setSearchName] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [sponsorEvents, setSponsorEvents] = useState<Event[]>([]);
+  const [filteredSponsorEvents, setFilteredSponsorEvents] = useState<Event[]>(
+    [],
+  );
 
   useEffect(() => {
     (async () => setEvents(await parent.getFutureEvents()))();
   }, [parent]);
+  useEffect(() => {
+    (async () => setSponsorEvents(await parent.getSponsorEvents()))();
+  }, [parent]);
+
   useEffect(() => {
     const maxPriceSpecification = new MaxPriceSpecification(
       maxPrice ? Number(maxPrice) : undefined,
@@ -34,7 +42,12 @@ const FutureEvents: FunctionComponent<IProps> = ({ parent }: IProps) => {
         maxPriceAndSearchNameSpecification.isSatisfiedByEvent(event),
       ),
     );
-  }, [events, searchName, maxPrice]);
+    setFilteredSponsorEvents(
+      sponsorEvents.filter((event) =>
+        maxPriceAndSearchNameSpecification.isSatisfiedByEvent(event),
+      ),
+    );
+  }, [events, searchName, maxPrice, sponsorEvents]);
 
   return (
     <div>
@@ -96,6 +109,26 @@ const FutureEvents: FunctionComponent<IProps> = ({ parent }: IProps) => {
               >
                 Add "{name}" to Booked Events
               </button>
+            </li>
+          ),
+        )}
+      </ul>
+      <h3>Sponsored events:</h3>
+      <ul>
+        {filteredSponsorEvents.map(
+          ({
+            id,
+            name,
+            date,
+            start_time,
+            price,
+            min_participants_count,
+            user_joined,
+          }) => (
+            <li key={id}>
+              {`Name: ${name}; Date: ${new Date(
+                date,
+              ).toLocaleDateString()} Time: ${start_time}; Price: ${price}$; User: ${user_joined}/${min_participants_count}`}
             </li>
           ),
         )}

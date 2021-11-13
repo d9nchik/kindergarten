@@ -1,4 +1,5 @@
 import User, { SERVER_URL } from './user';
+import { getSponsorEvents } from './chainOfResponsibility';
 
 export interface Event {
   name: string;
@@ -36,6 +37,10 @@ class Parent extends User {
     });
     const data = (await response.json()) as Event[];
     return data;
+  }
+
+  public getSponsorEvents(): Promise<Event[]> {
+    return getSponsorEvents(this.jwt_token);
   }
 }
 
