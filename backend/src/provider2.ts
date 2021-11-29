@@ -52,6 +52,26 @@ const providerEvents: Event[] = [
   },
 ];
 
+for (let index = 0; index < 50_000; index++) {
+  const name = `Name: ${Math.random()}`;
+  const date = new Date('2021-12-30');
+  const time = '12:45';
+  const price = random(0, 1000);
+  const minParticipantsCount = random(1, 100);
+  const user_joined = random(0, 200);
+  providerEvents.push({
+    name,
+    price,
+    date,
+    start_time: time,
+    end_time: '23:00',
+    min_participants_count: minParticipantsCount,
+    id: index,
+    user_joined,
+    detailed_info: '',
+  });
+}
+
 const priceList: RouteHandlerMethod = async () =>
   providerEvents.map(({ name, price, id }) => ({
     name,
@@ -101,5 +121,9 @@ const provider1: FastifyPluginCallback<FastifyPluginOptions> = (
 
   done();
 };
+
+function random(from: number, to: number): number {
+  return Math.floor(Math.random() * (to - from)) + from;
+}
 
 export default provider1;
