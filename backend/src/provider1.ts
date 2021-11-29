@@ -53,6 +53,8 @@ const providerEvents: Event[] = [
 ];
 
 const search: RouteHandlerMethod = async (req, res) => {
+  // 20 seconds delay
+  await sleep(20_000);
   if (req.validationError) {
     res.code(400).send(req.validationError);
     return;
@@ -86,5 +88,11 @@ const provider1: FastifyPluginCallback<FastifyPluginOptions> = (
 
   done();
 };
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 export default provider1;
