@@ -53,6 +53,11 @@ CREATE TABLE kindergarten.event
     detailed_info          TEXT,
     is_selected            BOOLEAN DEFAULT FALSE NOT NULL
 );
+CREATE EXTENSION pg_trgm;
+
+CREATE INDEX event_name_index
+    ON event USING gin (name gin_trgm_ops);
+
 CREATE TABLE kindergarten."user"
 (
     id            SERIAL
