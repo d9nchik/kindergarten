@@ -1,7 +1,6 @@
 import { SERVER_URL } from './user';
 
-const TIME_IN_MILISECONDS_OF_CACHE_INVALIDATION = 1000 * 60 * 60 * 3;
-
+const START_TIME = 9;
 interface ShortEvent {
   name: string;
   id: number;
@@ -60,7 +59,7 @@ const getProvider1Data = async (
   }
 
   const res = JSON.parse(cache) as { time: number; data: Event[] };
-  if (res.time + TIME_IN_MILISECONDS_OF_CACHE_INVALIDATION < Date.now()) {
+  if (res.time < new Date().setHours(START_TIME, 0, 0, 0)) {
     (async () => {
       const response = await fetch(`${SERVER_URL}/provider1/search`, {
         headers: { Authorization: token },
@@ -78,39 +77,65 @@ const getProvider1Data = async (
   }
   return res.data.filter(({ name }) => name.includes(subString));
 };
+interface Provider2LocalStorageSchema {
+  time: number;
+  priceList: ShortEvent[];
+  itemsDescription: { [key: string]: Event | undefined };
+}
 
-export class Provider2Handler extends BaseHandler {
-  public async handle(request: string): Promise<Event[]> {
-    if (request !== 'provider2') {
-      return super.handle(request);
-    }
-
+const getProvider2Data = async (
+  token: string,
+  subString: string,
+): Promise<Event[]> => {
+  const cache = localStorage.getItem('cache/provider2');
+  let parsed: Provider2LocalStorageSchema;
+  if (!cache) {
     const response = await fetch(`${SERVER_URL}/provider2/price-list`, {
-      headers: { Authorization: this.token },
+      headers: { Authorization: token },
     });
     const data = (await response.json()) as ShortEvent[];
+    parsed = { time: Date.now(), priceList: data, itemsDescription: {} };
+  } else {
+    parsed = JSON.parse(cache);
+  }
 
-    return Promise.all(
-      data.map(async ({ id }) => {
+  if (parsed.time < new Date().setHours(START_TIME, 0, 0, 0)) {
+    const response = await fetch(`${SERVER_URL}/provider2/price-list`, {
+      headers: { Authorization: token },
+    });
+    const data = (await response.json()) as ShortEvent[];
+    parsed = { time: Date.now(), priceList: data, itemsDescription: {} };
+  }
+
+  const result = Promise.all(
+    parsed.priceList
+      .filter(({ name }) => name.includes(subString))
+      .slice(0, 100)
+      .map(async ({ id }) => {
+        const dictionaryEvent = parsed.itemsDescription[id];
+        if (dictionaryEvent) {
+          return dictionaryEvent;
+        }
         const url = new URL(`${SERVER_URL}/provider2/details`);
         url.searchParams.append('eventID', id.toString());
         const response = await fetch(url.toString(), {
-          headers: { Authorization: this.token },
+          headers: { Authorization: token },
         });
-        return (await response.json()) as Event;
+        const event = (await response.json()) as Event;
+        parsed.itemsDescription[id] = event;
+        return event;
       }),
-    );
-  }
-}
+  );
+  localStorage.setItem('cache/provider2', JSON.stringify(parsed));
+  return result;
+};
 
 export async function getSponsorEvents(
   token: string,
   subString: string,
 ): Promise<Event[]> {
   const provider1Result = getProvider1Data(token, subString);
+  const provider2Result = getProvider2Data(token, subString);
 
-  return [
-    ...(await provider1Result),
-    // ...(await provider1Handler.handle('provider2')),
-  ];
+  return [...(await provider1Result), ...(await provider2Result)];
 }
