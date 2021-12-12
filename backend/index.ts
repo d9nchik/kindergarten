@@ -1,6 +1,7 @@
 import fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import fastifyAuth from 'fastify-auth';
 import fastifyJWT from 'fastify-jwt';
+import fastifyCors from 'fastify-cors';
 import auth, { TokenProps } from './src/auth';
 import manager from './src/manager';
 import organizer from './src/organizer';
@@ -12,6 +13,7 @@ const server = fastify({ logger: true });
 
 server.register(fastifyJWT, { secret: 'supersecret' });
 server.register(fastifyAuth);
+server.register(fastifyCors, { origin: '*', methods: ['GET', 'POST'] });
 
 const headerMissingMessage = 'Missing token header';
 
