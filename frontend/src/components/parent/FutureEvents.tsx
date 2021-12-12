@@ -1,10 +1,5 @@
 import React, { FunctionComponent, useEffect, useState } from 'react';
 import Parent, { Event } from '../../utils/parent';
-import {
-  AndSpecification,
-  MaxPriceSpecification,
-  NameSpecification,
-} from '../../utils/specification';
 
 interface IProps {
   parent: Parent;
@@ -13,41 +8,19 @@ interface IProps {
 const FutureEvents: FunctionComponent<IProps> = ({ parent }: IProps) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [searchName, setSearchName] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [sponsorEvents, setSponsorEvents] = useState<Event[]>([]);
-  const [filteredSponsorEvents, setFilteredSponsorEvents] = useState<Event[]>(
-    [],
-  );
 
   useEffect(() => {
     (async () => setEvents(await parent.getFutureEvents()))();
   }, [parent]);
   useEffect(() => {
-    (async () => setSponsorEvents(await parent.getSponsorEvents()))();
+    (async () => setSponsorEvents(await parent.getSponsorEvents('')))();
   }, [parent]);
 
   useEffect(() => {
-    const maxPriceSpecification = new MaxPriceSpecification(
-      maxPrice ? Number(maxPrice) : undefined,
-    );
-    const searchNameSpecification = new NameSpecification(searchName);
-    const maxPriceAndSearchNameSpecification = new AndSpecification();
-    maxPriceAndSearchNameSpecification.addSpecification(maxPriceSpecification);
-    maxPriceAndSearchNameSpecification.addSpecification(
-      searchNameSpecification,
-    );
-    setFilteredEvents(
-      events.filter((event) =>
-        maxPriceAndSearchNameSpecification.isSatisfiedByEvent(event),
-      ),
-    );
-    setFilteredSponsorEvents(
-      sponsorEvents.filter((event) =>
-        maxPriceAndSearchNameSpecification.isSatisfiedByEvent(event),
-      ),
-    );
-  }, [events, searchName, maxPrice, sponsorEvents]);
+    (async () => setEvents(await parent.getFutureEvents(searchName)))();
+    (async () => setSponsorEvents(await parent.getSponsorEvents(searchName)))();
+  }, [searchName, parent]);
 
   return (
     <div>
@@ -62,25 +35,16 @@ const FutureEvents: FunctionComponent<IProps> = ({ parent }: IProps) => {
           />
         </label>
         <br />
-        <label>
-          Max Price
-          <input
-            type="number"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-          />
-        </label>
         <button
           onClick={() => {
             setSearchName('');
-            setMaxPrice('');
           }}
         >
           Clear
         </button>
       </form>
       <ul>
-        {filteredEvents.map(
+        {events.map(
           ({
             id,
             name,
@@ -115,7 +79,7 @@ const FutureEvents: FunctionComponent<IProps> = ({ parent }: IProps) => {
       </ul>
       <h3>Sponsored events:</h3>
       <ul>
-        {filteredSponsorEvents.map(
+        {sponsorEvents.map(
           ({
             id,
             name,

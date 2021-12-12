@@ -1,5 +1,7 @@
 import { SERVER_URL } from './user';
 
+const TIME_IN_MILISECONDS_OF_CACHE_INVALIDATION = 1000 * 60 * 60 * 3;
+
 interface ShortEvent {
   name: string;
   id: number;
@@ -40,19 +42,42 @@ export class BaseHandler implements Handler {
   }
 }
 
-export class Provider1Handler extends BaseHandler {
-  public async handle(request: string): Promise<Event[]> {
-    if (request !== 'provider1') {
-      return super.handle(request);
-    }
-
+const getProvider1Data = async (
+  token: string,
+  subString: string,
+): Promise<Event[]> => {
+  const cache = localStorage.getItem('cache/provider1');
+  if (!cache) {
     const response = await fetch(`${SERVER_URL}/provider1/search`, {
-      headers: { Authorization: this.token },
+      headers: { Authorization: token },
     });
     const data = (await response.json()) as Event[];
-    return data;
+    localStorage.setItem(
+      'cache/provider1',
+      JSON.stringify({ data, time: Date.now() }),
+    );
+    return data.filter(({ name }) => name.includes(subString));
   }
-}
+
+  const res = JSON.parse(cache) as { time: number; data: Event[] };
+  if (res.time + TIME_IN_MILISECONDS_OF_CACHE_INVALIDATION < Date.now()) {
+    (async () => {
+      const response = await fetch(`${SERVER_URL}/provider1/search`, {
+        headers: { Authorization: token },
+      });
+      try {
+        const data = (await response.json()) as Event[];
+        localStorage.setItem(
+          'cache/provider1',
+          JSON.stringify({ data, time: Date.now() }),
+        );
+      } catch {
+        console.log('Problem with cache updating');
+      }
+    })();
+  }
+  return res.data.filter(({ name }) => name.includes(subString));
+};
 
 export class Provider2Handler extends BaseHandler {
   public async handle(request: string): Promise<Event[]> {
@@ -78,13 +103,14 @@ export class Provider2Handler extends BaseHandler {
   }
 }
 
-export async function getSponsorEvents(token: string): Promise<Event[]> {
-  const provider1Handler = new Provider1Handler(token);
-  const provider2Handler = new Provider2Handler(token);
-  provider1Handler.setNext(provider2Handler);
+export async function getSponsorEvents(
+  token: string,
+  subString: string,
+): Promise<Event[]> {
+  const provider1Result = getProvider1Data(token, subString);
 
   return [
-    ...(await provider1Handler.handle('provider1')),
-    ...(await provider1Handler.handle('provider2')),
+    ...(await provider1Result),
+    // ...(await provider1Handler.handle('provider2')),
   ];
 }

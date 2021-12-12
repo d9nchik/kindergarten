@@ -23,8 +23,10 @@ class Parent extends User {
 
     return response.ok;
   }
-  public async getFutureEvents(): Promise<Event[]> {
-    const response = await fetch(`${SERVER_URL}/user/futureEvents`, {
+  public async getFutureEvents(subString = ''): Promise<Event[]> {
+    const url = new URL(`${SERVER_URL}/user/futureEvents`);
+    url.searchParams.append('subString', subString);
+    const response = await fetch(url.toString(), {
       headers: { Authorization: this.jwt_token },
     });
     const data = (await response.json()) as Event[];
@@ -39,8 +41,8 @@ class Parent extends User {
     return data;
   }
 
-  public getSponsorEvents(): Promise<Event[]> {
-    return getSponsorEvents(this.jwt_token);
+  public getSponsorEvents(subString: string): Promise<Event[]> {
+    return getSponsorEvents(this.jwt_token, subString);
   }
 }
 
