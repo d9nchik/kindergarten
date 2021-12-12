@@ -43,32 +43,34 @@ const rowToEvent = (row: RowEventProps): EventProps => ({
 });
 
 const futureEvents: RouteHandlerMethod = async (req, res) => {
-  const payload = req.query as { userID: number };
+  const payload = req.query as { userID: number; subString: string };
   try {
     const result = await db.query(
       `SELECT name,
-            price,
-            T.id AS id,
-            date,
-            start_time,
-            end_time,
-            min_participants_count,
-            detailed_info,
-            user_joined
+              price,
+              T.id AS id,
+              date,
+              start_time,
+              end_time,
+              min_participants_count,
+              detailed_info,
+              user_joined
         FROM (
                 SELECT id, COUNT(user_id) AS user_joined
                 FROM kindergarten.event
-                        LEFT JOIN kindergarten.book b on event.id = b.event_id
+                          LEFT JOIN kindergarten.book b on event.id = b.event_id
                 WHERE is_selected = TRUE
-                AND (date + start_time) > NOW()
-                AND id NOT IN (SELECT book.event_id FROM kindergarten.book WHERE book.user_id = $1)
+                  AND (date + start_time) > NOW()
+                  AND id NOT IN (SELECT book.event_id FROM kindergarten.book WHERE book.user_id = $1)
                 GROUP BY id) T
-                JOIN kindergarten.event e ON T.id = e.id;`,
-      [payload.userID],
+                JOIN kindergarten.event e ON T.id = e.id
+        WHERE name LIKE $2 LIMIT 100;`,
+      [payload.userID, payload.subString ? `%${payload.subString}%` : '%'],
     );
     const notSelectedEvents = result.rows.map(rowToEvent);
     res.send(notSelectedEvents);
   } catch (err) {
+    console.log(err);
     res.code(500).send(serverErrorMessage);
   }
 };
