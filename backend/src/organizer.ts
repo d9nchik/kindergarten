@@ -28,10 +28,10 @@ interface AddEventProps {
 
 export const addEvent = async (event: AddEventProps) => {
   try {
-    await db.query(
+    const res = await db.query(
       `INSERT INTO kindergarten.event (event_type_id, event_organizer_id, name, date, start_time, end_time, price,
                                 min_participants_count, detailed_info)
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;`,
       [
         event.eventTypeID,
         event.userOrganizerID,
@@ -44,7 +44,15 @@ export const addEvent = async (event: AddEventProps) => {
         event.detailedInfo,
       ],
     );
-    return event;
+    return {
+      ...event,
+      id: res.rows[0].id,
+      min_participants_count: event.minParticipantsCount,
+      user_joined: 0,
+      start_time: event.startTime,
+      end_time: event.endTime,
+      detailed_info: event.detailedInfo,
+    };
   } catch (error) {
     console.log(error);
     return null;

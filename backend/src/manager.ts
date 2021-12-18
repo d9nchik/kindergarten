@@ -126,6 +126,7 @@ export const selectEvent = async (eventID: number) => {
 export const futureEvents = async () => {
   try {
     const result = await db.query(`SELECT name,
+                                          e.id AS id,
                                           price,
                                           date,
                                           start_time,
@@ -142,6 +143,7 @@ export const futureEvents = async () => {
                                             GROUP BY id) T
                                             JOIN kindergarten.event e ON T.id = e.id;`);
     return result.rows.map((row) => ({
+      id: row.id,
       name: row.name,
       price: row.price,
       date: row.date,

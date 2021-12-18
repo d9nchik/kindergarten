@@ -150,7 +150,7 @@ const resolvers = {
       search(args.maxMoneyLimit),
     provider2List: priceList,
     provider2Event: (_: any, args: Record<string, any>) =>
-      idDetails(args.eventID),
+      idDetails(Number(args.eventID)),
     organizerList: getAllOrganizers,
     organizerInfo: async (_: any, args: Record<string, any>) =>
       getOrganizer(args.organizerID),
