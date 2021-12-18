@@ -1,11 +1,4 @@
-import {
-  FastifyPluginCallback,
-  FastifyPluginOptions,
-  RouteHandlerMethod,
-} from 'fastify';
 import db from './db';
-
-const serverErrorMessage = 'Sorry, something gone wrong';
 
 interface RowEventProps {
   name: string;
@@ -42,8 +35,10 @@ const rowToEvent = (row: RowEventProps): EventProps => ({
   user_joined: Number(row.user_joined),
 });
 
-const futureEvents: RouteHandlerMethod = async (req, res) => {
-  const payload = req.query as { userID: number; subString: string };
+export const futureEvents = async (
+  userID: number,
+  subString: string,
+): Promise<EventProps[]> => {
   try {
     const result = await db.query(
       `SELECT name,
@@ -65,17 +60,15 @@ const futureEvents: RouteHandlerMethod = async (req, res) => {
                 GROUP BY id) T
                 JOIN kindergarten.event e ON T.id = e.id
         WHERE name LIKE $2 LIMIT 100;`,
-      [payload.userID, payload.subString ? `%${payload.subString}%` : '%'],
+      [userID, subString ? `%${subString}%` : '%'],
     );
-    const notSelectedEvents = result.rows.map(rowToEvent);
-    res.send(notSelectedEvents);
+    return result.rows.map(rowToEvent);
   } catch (err) {
     console.log(err);
-    res.code(500).send(serverErrorMessage);
+    return [];
   }
 };
-const bookedEvents: RouteHandlerMethod = async (req, res) => {
-  const payload = req.query as { userID: number };
+export const bookedEvents = async (userID: string): Promise<EventProps[]> => {
   try {
     const result = await db.query(
       `SELECT T.id,
@@ -97,71 +90,54 @@ const bookedEvents: RouteHandlerMethod = async (req, res) => {
                     AND b.book_status_id = 1
                   GROUP BY id) T
                   JOIN kindergarten.event e ON T.id = e.id;`,
-      [payload.userID],
+      [userID],
     );
-    const notSelectedEvents = result.rows.map(rowToEvent);
-    res.send(notSelectedEvents);
+    return result.rows.map(rowToEvent);
   } catch (err) {
-    res.code(500).send(serverErrorMessage);
+    console.error(err);
+    return [];
   }
 };
 
-const bookEvent: RouteHandlerMethod = async (req, res) => {
-  if (req.validationError) {
-    res.code(400).send(req.validationError);
-    return;
-  }
-  const payload = req.query as { userID: number; eventID: number };
+export const bookEvent = async (eventID: string, userID: string) => {
   try {
     await db.query(
       `INSERT INTO kindergarten.book (event_id, user_id, book_status_id)
         VALUES ($1, $2, 1);`,
-      [payload.eventID, payload.userID],
+      [eventID, userID],
     );
-    res.send('Successfully booked');
+    console.log('Successfully booked');
   } catch (err) {
     console.log(err);
-    res.code(500).send(serverErrorMessage);
   }
 };
-
-const user: FastifyPluginCallback<FastifyPluginOptions> = (
-  fastify,
-  _,
-  done,
-) => {
-  fastify.route({
-    method: 'GET',
-    url: '/futureEvents',
-    preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: futureEvents,
-  });
-
-  fastify.route({
-    method: 'GET',
-    url: '/bookedEvents',
-    preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: bookedEvents,
-  });
-
-  fastify.route({
-    method: 'GET',
-    url: '/bookEvent',
-    preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: bookEvent,
-    schema: {
-      querystring: {
-        type: 'object',
-        properties: {
-          eventID: { type: 'number' },
-        },
-        required: ['eventID'],
-      },
-    },
-    attachValidation: true,
-  });
-
-  done();
+export const getEventByID = async (
+  eventID: string,
+): Promise<EventProps | null> => {
+  try {
+    const result = await db.query(
+      `SELECT T.id,
+                name,
+                price,
+                date,
+                start_time,
+                end_time,
+                min_participants_count,
+                detailed_info,
+                user_joined
+          FROM (
+                  SELECT id, COUNT(user_id) AS user_joined
+                  FROM kindergarten.event
+                            LEFT JOIN kindergarten.book b on event.id = b.event_id
+                  WHERE is_selected = TRUE
+                    AND id = $1
+                  GROUP BY id) T
+                  JOIN kindergarten.event e ON T.id = e.id;`,
+      [eventID],
+    );
+    return rowToEvent(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
 };
-
-export default user;

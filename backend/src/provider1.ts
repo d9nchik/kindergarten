@@ -1,9 +1,3 @@
-import {
-  FastifyPluginCallback,
-  FastifyPluginOptions,
-  RouteHandlerMethod,
-} from 'fastify';
-
 interface Event {
   name: string;
   id: number;
@@ -52,47 +46,8 @@ const providerEvents: Event[] = [
   },
 ];
 
-const search: RouteHandlerMethod = async (req, res) => {
-  // 20 seconds delay
-  await sleep(20_000);
-  if (req.validationError) {
-    res.code(400).send(req.validationError);
-    return;
-  }
-  const payload = req.query as { userID: number; maxMoneyLimit: number };
-  return payload.maxMoneyLimit
-    ? providerEvents.filter(({ price }) => price < payload.maxMoneyLimit)
+export const search = (maxMoneyLimit: number) => {
+  return maxMoneyLimit
+    ? providerEvents.filter(({ price }) => price < maxMoneyLimit)
     : providerEvents;
 };
-
-const provider1: FastifyPluginCallback<FastifyPluginOptions> = (
-  fastify,
-  _,
-  done,
-) => {
-  fastify.route({
-    method: 'GET',
-    url: '/search',
-    preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: search,
-    schema: {
-      querystring: {
-        type: 'object',
-        properties: {
-          maxMoneyLimit: { type: 'number' },
-        },
-      },
-    },
-    attachValidation: true,
-  });
-
-  done();
-};
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-export default provider1;

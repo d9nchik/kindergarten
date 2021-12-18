@@ -1,104 +1,183 @@
-import fastify, { FastifyRequest, FastifyReply } from 'fastify';
-import fastifyAuth from 'fastify-auth';
-import fastifyJWT from 'fastify-jwt';
-import fastifyCors from 'fastify-cors';
-import auth, { TokenProps } from './src/auth';
-import manager from './src/manager';
-import organizer from './src/organizer';
-import user from './src/user';
-import provider1 from './src/provider1';
-import provider2 from './src/provider2';
+import { ApolloServer, gql } from 'apollo-server';
+import {
+  bookedEvents,
+  futureEvents,
+  bookEvent,
+  getEventByID,
+} from './src/user';
+import { search } from './src/provider1';
+import { priceList, idDetails } from './src/provider2';
+import {
+  getAllOrganizers,
+  getOrganizer,
+  updateOrganizer,
+  getNotSelectedEvents,
+  selectEvent,
+  futureEvents as adminFutureEvents,
+} from './src/manager';
+import { getEventsType, addEvent } from './src/organizer';
 
-const server = fastify({ logger: true });
+// A schema is a collection of type definitions (hence "typeDefs")
+// that together define the "shape" of queries that are executed against
+// your data.
+const typeDefs = gql`
+  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
 
-server.register(fastifyJWT, { secret: 'supersecret' });
-server.register(fastifyAuth);
-server.register(fastifyCors, { origin: '*', methods: ['GET', 'POST'] });
-
-const headerMissingMessage = 'Missing token header';
-
-server.decorate(
-  'verifyJWT',
-  function (
-    req: FastifyRequest<{ Querystring: { userID: number } }>,
-    res: FastifyReply,
-    done: (err?: Error | undefined) => void,
-  ) {
-    const auth = req.raw.headers.authorization;
-    if (!auth) {
-      return done(new Error(headerMissingMessage));
-    }
-    const data = this.jwt.verify(auth) as TokenProps;
-    if (req.query !== null) {
-      req.query.userID = data.id;
-    }
-    console.log(data);
-    done();
-  },
-);
-
-server.decorate(
-  'verifyJWTAndAdminRights',
-  function (
-    req: FastifyRequest,
-    res: FastifyReply,
-    done: (err?: Error | undefined) => void,
-  ) {
-    const auth = req.raw.headers.authorization;
-    if (!auth) {
-      return done(new Error(headerMissingMessage));
-    }
-    const data = this.jwt.verify(
-      Array.isArray(auth) ? auth[0] : auth,
-    ) as TokenProps;
-
-    if (!data.statusArray.includes('manager')) {
-      return done(new Error('Your account not have "manager" status'));
-    }
-
-    done();
-  },
-);
-
-server.decorateRequest('userOrganizerID', '');
-
-server.decorate(
-  'verifyJWTAndOrganizerRights',
-
-  function (
-    req: FastifyRequest<{ Body: { userOrganizerID: number } }>,
-    res: FastifyReply,
-    done: (err?: Error | undefined) => void,
-  ) {
-    req.jwtVerify();
-    const auth = req.raw.headers.authorization;
-    if (!auth) {
-      return done(new Error(headerMissingMessage));
-    }
-    const data = this.jwt.verify(auth) as TokenProps;
-    if (data.organizerArray.length === 0) {
-      return done(new Error('Your account not have "organizer" status'));
-    }
-    if (req.body !== null) req.body.userOrganizerID = data.organizerArray[0];
-
-    done();
-  },
-);
-
-server.after(() => {
-  server.register(auth);
-  server.register(manager, { prefix: '/manager' });
-  server.register(organizer, { prefix: '/organizer' });
-  server.register(user, { prefix: '/user' });
-  server.register(provider1, { prefix: '/provider1' });
-  server.register(provider2, { prefix: '/provider2' });
-});
-
-(async () => {
-  try {
-    await server.listen(8080);
-  } catch (err) {
-    server.log.error(err);
-    process.exit(1);
+  # This "Book" type defines the queryable fields for every book in our data source.
+  type Book {
+    title: String
+    author: String
   }
-})();
+
+  type Event {
+    id: ID!
+    name: String!
+    price: Float!
+    date: String!
+    start_time: String!
+    end_time: String
+    min_participants_count: Int!
+    detailed_info: String
+    user_joined: Int!
+  }
+
+  type Organizer {
+    organizerID: ID!
+    name: String!
+    address: String!
+    phone_number: String!
+    site: String
+    mail: String!
+    detailed_info: String
+  }
+
+  input OrganizerInput {
+    organizerID: String!
+    name: String!
+    address: String!
+    phone_number: String!
+    site: String
+    mail: String!
+    detailed_info: String
+  }
+
+  type EventType {
+    id: ID!
+    name: String!
+  }
+
+  type AdminEvent {
+    id: ID!
+    name: String!
+    price: Float!
+    date: String!
+    start_time: String!
+    end_time: String
+    min_participants_count: Int!
+    detailed_info: String
+  }
+
+  input AddEvent {
+    eventTypeID: String!
+    userOrganizerID: String!
+    name: String!
+    date: Int!
+    startTime: String!
+    endTime: String
+    price: Float!
+    minParticipantsCount: Int!
+    detailedInfo: String
+  }
+
+  type ShortOrganizer {
+    id: ID!
+    companyName: String!
+  }
+
+  type ShortEvent {
+    id: ID!
+    name: String!
+    price: Float!
+  }
+
+  # The "Query" type is special: it lists all of the available queries that
+  # clients can execute, along with the return type for each. In this
+  # case, the "books" query returns an array of zero or more Books (defined above).
+  type Query {
+    books: [Book]
+    futureEvents(userID: ID!, subString: String): [Event!]!
+    bookedEvents(userID: ID!): [Event!]
+    provider1Events(maxMoneyLimit: Float): [Event!]!
+    provider2List: [ShortEvent!]!
+    provider2Event(eventID: ID!): Event
+    organizerList: [ShortOrganizer!]!
+    organizerInfo(organizerID: ID!): Organizer!
+    eventTypes: [EventType!]!
+    notSelectedEvents: [AdminEvent!]!
+    adminFutureEvents: [AdminEvent!]!
+  }
+
+  type Mutation {
+    bookEvent(eventID: ID!, userID: ID!): Event
+    updateOrganizer(org: OrganizerInput!): Organizer
+    addEvent(event: AddEvent!): Event
+    selectEvent(eventID: Int!): Event
+  }
+`;
+
+const books = [
+  {
+    title: 'The Awakening',
+    author: 'Kate Chopin',
+  },
+  {
+    title: 'City of Glass',
+    author: 'Paul Auster',
+  },
+];
+
+// Resolvers define the technique for fetching the types defined in the
+// schema. This resolver retrieves books from the "books" array above.
+const resolvers = {
+  Query: {
+    books: () => books,
+    futureEvents: async (_: any, args: Record<string, any>) => {
+      return futureEvents(args.userID, args.subString);
+    },
+    bookedEvents: async (_: any, args: Record<string, any>) =>
+      bookedEvents(args.userID),
+    provider1Events: (_: any, args: Record<string, any>) =>
+      search(args.maxMoneyLimit),
+    provider2List: priceList,
+    provider2Event: (_: any, args: Record<string, any>) =>
+      idDetails(args.eventID),
+    organizerList: getAllOrganizers,
+    organizerInfo: async (_: any, args: Record<string, any>) =>
+      getOrganizer(args.organizerID),
+    eventTypes: getEventsType,
+    notSelectedEvents: getNotSelectedEvents,
+    adminFutureEvents: adminFutureEvents,
+  },
+  Mutation: {
+    bookEvent: async (_: any, args: Record<string, any>) => {
+      await bookEvent(args.eventID, args.userID);
+      return getEventByID(args.eventID);
+    },
+    updateOrganizer: async (_: any, args: Record<string, any>) => {
+      await updateOrganizer(args.org);
+      return getEventByID(args.org);
+    },
+    addEvent: async (_: any, args: Record<string, any>) => addEvent(args.event),
+    selectEvent: async (_: any, args: Record<string, any>) =>
+      selectEvent(args.eventID),
+  },
+};
+
+// The ApolloServer constructor requires two parameters: your schema
+// definition and your set of resolvers.
+const server = new ApolloServer({ typeDefs, resolvers });
+
+// The `listen` method launches a web server.
+server.listen().then(({ url }) => {
+  console.log(`🚀  Server ready at ${url}`);
+});

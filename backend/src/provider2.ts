@@ -1,9 +1,3 @@
-import {
-  FastifyPluginCallback,
-  FastifyPluginOptions,
-  RouteHandlerMethod,
-} from 'fastify';
-
 interface Event {
   name: string;
   id: number;
@@ -52,78 +46,15 @@ const providerEvents: Event[] = [
   },
 ];
 
-for (let index = 0; index < 50_000; index++) {
-  const name = `Name: ${Math.random()}`;
-  const date = new Date('2021-12-30');
-  const time = '12:45';
-  const price = random(0, 1000);
-  const minParticipantsCount = random(1, 100);
-  const user_joined = random(0, 200);
-  providerEvents.push({
-    name,
-    price,
-    date,
-    start_time: time,
-    end_time: '23:00',
-    min_participants_count: minParticipantsCount,
-    id: index,
-    user_joined,
-    detailed_info: '',
-  });
-}
-
-const priceList: RouteHandlerMethod = async () =>
+export const priceList = () =>
   providerEvents.map(({ name, price, id }) => ({
     name,
     price,
     id,
   }));
 
-const idDetails: RouteHandlerMethod = async (req, res) => {
-  if (req.validationError) {
-    res.code(400).send(req.validationError);
-    return;
-  }
-  const { eventID } = req.query as { userID: number; eventID: number };
+export const idDetails = (eventID: number): Event | null => {
   const event = providerEvents.filter(({ id }) => id === eventID);
-  if (event.length === 0) return res.status(404).send('Event not found');
+  if (event.length === 0) return null;
   return event[0];
 };
-
-const provider1: FastifyPluginCallback<FastifyPluginOptions> = (
-  fastify,
-  _,
-  done,
-) => {
-  fastify.route({
-    method: 'GET',
-    url: '/price-list',
-    preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: priceList,
-  });
-
-  fastify.route({
-    method: 'GET',
-    url: '/details',
-    preHandler: fastify.auth([fastify.verifyJWT]),
-    handler: idDetails,
-    schema: {
-      querystring: {
-        type: 'object',
-        properties: {
-          eventID: { type: 'number' },
-        },
-        required: ['eventID'],
-      },
-    },
-    attachValidation: true,
-  });
-
-  done();
-};
-
-function random(from: number, to: number): number {
-  return Math.floor(Math.random() * (to - from)) + from;
-}
-
-export default provider1;
